@@ -1,3 +1,4 @@
+Ideas & Selection Rationale
 My idea is to create a network topology mapper.
 
 This will map and visualize the relationships between devices on my home network. Each device has details like the hostname, IP, MAC, and their connections which will be collected and visualized.
@@ -9,10 +10,11 @@ Features
 • Import topology data from network scans or use
 network scan in app (Using tools like nmap)
 
-Branching Strategy:
+Branch Usage Reflections:
 The initial branching strategy is to have a unique branch per feature before merging to main.
+I called the initial branch "main_screen" as that will be the first feature.
 
-Wireframe:
+Wireframe Notes:
 Since there is no need to login, the UI can be a lot more simplistic. I was shooting for a simple windows UI with a draggable interior where the network diagram will appear. This will definitely change as I learn more of the requirements for this specific project.
 
 
