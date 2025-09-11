@@ -8,3 +8,9 @@ Features
 • View by category
 • Import topology data from network scans or use
 network scan in app (Using tools like nmap)
+
+Branching Strategy:
+The initial branching strategy is to have a unique branch per feature before merging to main.
+
+Wireframe:
+Since there is no need to login, the UI can be a lot more simplistic. I was shooting for a simple windows UI with a draggable interior where the network diagram will appear. This will definitely change as I learn more of the requirements for this specific project.
