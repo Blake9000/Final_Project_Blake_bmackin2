@@ -14,3 +14,7 @@ The initial branching strategy is to have a unique branch per feature before mer
 
 Wireframe:
 Since there is no need to login, the UI can be a lot more simplistic. I was shooting for a simple windows UI with a draggable interior where the network diagram will appear. This will definitely change as I learn more of the requirements for this specific project.
+
+
+Initialized the install.
+I called the first app "main_screen" as this is what the user will primarily look at.
