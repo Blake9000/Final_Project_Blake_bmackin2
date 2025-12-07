@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Net Toolkit Dashboard{% endblock %}
+{% block nav_port_scanner_active %}active{% endblock %}
+
+{% block content %}
+  <header class="mb-4">
+    <div class="row g-3 align-items-center">
+      <div class="col-md">
+        <h1 class="h3 mb-1">Network Utility Dashboard</h1>
+        <p class="text-secondary mb-0">
+          Run port scans, sketch your network topology, and access other diagnostics from one place.
+        </p>
+      </div>
+      <div class="col-md-auto">
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary btn-sm" type="button">
+            <i class="bi bi-play-circle me-1"></i>Quick Scan
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" type="button">
+            <i class="bi bi-clock-history me-1"></i>View History
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="row g-4">
+    <div class="col-lg-6" id="port-scanner">
+      <div class="card bg-surface border-secondary h-100">
+        <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">
+            <i class="bi bi-ethernet me-1"></i>Port Scanner
+          </span>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+            Active
+          </span>
+        </div>
+        <div class="card-body">
+          <form id="port-scan-form" class="row g-3"
+                method="post" action="">
+            {% csrf_token %}
+            <div class="col-12">
+              <label for="targetHost" class="form-label">Target host or IP</label>
+              <input
+                type="text"
+                class="form-control bg-dark text-light border-secondary"
+                id="targetHost"
+                name="target"
+                placeholder="192.168.1.10 or example.com"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <label for="portRange" class="form-label">Port(s)</label>
+              <input
+                type="text"
+                class="form-control bg-dark text-light border-secondary"
+                id="portRange"
+                name="ports"
+                placeholder="80,443 or 1-1024"
+              />
+            </div>
+            <div class="col-md-6">
+              <label for="scanProfile" class="form-label">Scan profile</label>
+              <select
+                class="form-select bg-dark text-light border-secondary"
+                id="scanProfile"
+                name="profile"
+              >
+                <option value="quick" selected>Quick</option>
+                <option value="full">Full</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label for="notes" class="form-label">Notes (optional)</label>
+              <textarea
+                id="notes"
+                name="notes"
+                rows="2"
+                class="form-control bg-dark text-light border-secondary"
+                placeholder="Add context for this scan..."
+              ></textarea>
+            </div>
+            <div class="col-12 d-flex justify-content-between align-items-center pt-2">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  value="1"
+                  id="saveScan"
+                  name="save"
+                  checked
+                />
+                <label class="form-check-label small" for="saveScan">
+                  Save to history
+                </label>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-arrow-repeat me-1"></i>Run Scan
+              </button>
+            </div>
+          </form>
+
+          <hr class="border-secondary my-4" />
+
+          <h2 class="h6 mb-3">Latest results</h2>
+          <div class="table-responsive">
+            <table class="table table-dark table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th scope="col">Port</th>
+                  <th scope="col">Protocol</th>
+                  <th scope="col">State</th>
+                  <th scope="col">Service</th>
+                  <th scope="col" class="text-end">Latency</th>
+                </tr>
+              </thead>
+              <tbody id="scan-results-body">
+                {% if results %}
+                  {% for r in results %}
+                    <tr>
+                      <td>{{ r.port }}</td>
+                      <td>{{ r.protocol }}</td>
+                      <td>
+                        {% if r.state == "open" %}
+                          <span class="badge bg-success text-uppercase">{{ r.state }}</span>
+                        {% else %}
+                          <span class="badge bg-secondary text-uppercase">{{ r.state }}</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ r.service }}</td>
+                      <td class="text-end">{{ r.latency }} ms</td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="5" class="text-secondary small">
+                      No scans yet. Run a scan to see results here.
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+          <p class="text-secondary small mt-2 mb-0">
+            This table is populated from the context variable <code>results</code>.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <section id="network-diagram" class="mb-4">
+        <div class="card bg-surface border-secondary">
+          <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">
+              <i class="bi bi-diagram-3 me-1"></i>Network Diagram
+            </span>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-light" type="button">
+                <i class="bi bi-plus-circle me-1"></i>Add node
+              </button>
+              <button class="btn btn-outline-light" type="button">
+                <i class="bi bi-arrows-move me-1"></i>Re-center
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary small">
+              Use this area as a canvas for your topology. Integrate a JS diagram library, SVG,
+              or custom canvas and feed it with discovered hosts.
+            </p>
+            <div class="diagram-canvas rounded d-flex align-items-center justify-content-center bg-dark-subtle">
+              <span class="text-secondary small text-center px-3">
+                Network diagram canvas placeholder<br />
+                (nodes for routers, switches, servers, subnets)
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="other-tools">
+        <div class="card bg-surface border-secondary">
+          <div class="card-header border-secondary">
+            <span class="fw-semibold">
+              <i class="bi bi-tools me-1"></i>Other Network Tools
+            </span>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="card bg-dark border-secondary h-100">
+                  <div class="card-body">
+                    <h3 class="h6 d-flex align-items-center gap-2">
+                      <i class="bi bi-broadcast-pin"></i>
+                      Ping / Latency
+                    </h3>
+                    <p class="text-secondary small mb-2">
+                      Send ICMP echo requests to measure reachability and latency.
+                    </p>
+                    <form class="d-flex gap-2" method="post" action="">
+                      {% csrf_token %}
+                      <input
+                        type="text"
+                        class="form-control form-control-sm bg-surface text-light border-secondary"
+                        name="target"
+                        placeholder="Host or IP"
+                      />
+                      <button class="btn btn-outline-light btn-sm" type="submit">
+                        Go
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="card bg-dark border-secondary h-100">
+                  <div class="card-body">
+                    <h3 class="h6 d-flex align-items-center gap-2">
+                      <i class="bi bi-signpost-split"></i>
+                      Traceroute
+                    </h3>
+                    <p class="text-secondary small mb-2">
+                      Visualize routing paths and hops to a destination.
+                    </p>
+                    <form class="d-flex gap-2" method="post" action="">
+                      {% csrf_token %}
+                      <input
+                        type="text"
+                        class="form-control form-control-sm bg-surface text-light border-secondary"
+                        name="target"
+                        placeholder="Destination"
+                      />
+                      <button class="btn btn-outline-light btn-sm" type="submit">
+                        Go
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="card bg-dark border-secondary h-100">
+                  <div class="card-body">
+                    <h3 class="h6 d-flex align-items-center gap-2">
+                      <i class="bi bi-diagram-2"></i>
+                      Subnet Calculator
+                    </h3>
+                    <p class="text-secondary small mb-2">
+                      Enter CIDR notation and compute network, broadcast, and usable ranges.
+                    </p>
+                    <form class="d-flex gap-2" method="post" action="">
+                      {% csrf_token %}
+                      <input
+                        type="text"
+                        class="form-control form-control-sm bg-surface text-light border-secondary"
+                        name="cidr"
+                        placeholder="192.168.1.0/24"
+                      />
+                      <button class="btn btn-outline-light btn-sm" type="submit">
+                        Go
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="card bg-dark border-secondary h-100">
+                  <div class="card-body">
+                    <h3 class="h6 d-flex align-items-center gap-2">
+                      <i class="bi bi-globe2"></i>
+                      DNS Lookup
+                    </h3>
+                    <p class="text-secondary small mb-2">
+                      Resolve hostnames and inspect records.
+                    </p>
+                    <form class="d-flex gap-2" method="post" action="">
+                      {% csrf_token %}
+                      <input
+                        type="text"
+                        class="form-control form-control-sm bg-surface text-light border-secondary"
+                        name="host"
+                        placeholder="example.com"
+                      />
+                      <button class="btn btn-outline-light btn-sm" type="submit">
+                        Go
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr class="border-secondary my-3" />
+            <p class="text-secondary small mb-0">
+              Add more cards here for additional utilities like ARP table inspection, MAC lookup,
+              or log visualization.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const form = document.getElementById("port-scan-form");
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      // e.preventDefault();
+    });
+  }
+</script>
+{% endblock %}

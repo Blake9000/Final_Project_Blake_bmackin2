@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    {% load static %}
+    <meta charset="utf-8" />
+    <title>{% block title %}Net Toolkit{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    />
+
+    <style>
+      body {
+        background-color: #050608;
+      }
+      .bg-surface {
+        background-color: #121318;
+      }
+      .card.bg-surface {
+        border-color: #2a2b32;
+      }
+      .nav-link.active {
+        border-bottom: 2px solid #0d6efd;
+        border-radius: 0;
+      }
+      .diagram-canvas {
+        min-height: 320px;
+        border: 1px dashed rgba(148, 163, 184, 0.5);
+      }
+    </style>
+
+  </head>
+
+  <body class="text-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-semibold" href="{% url 'dashboard' %}">
+          <i class="bi bi-diagram-3 me-2"></i>Net Toolkit
+        </a>
+
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarMain"
+          aria-controls="navbarMain"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link {% block nav_port_scanner_active %}{% endblock %}"
+                 href="{% url 'dashboard' %}#port-scanner">
+                <i class="bi bi-ethernet me-1"></i>Port Scanner
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% block nav_network_diagram_active %}{% endblock %}"
+                 href="{% url 'dashboard' %}#network-diagram">
+                <i class="bi bi-diagram-3 me-1"></i>Network Diagram
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% block nav_other_tools_active %}{% endblock %}"
+                 href="{% url 'dashboard' %}#other-tools">
+                <i class="bi bi-tools me-1"></i>Other Tools
+              </a>
+            </li>
+          </ul>
+
+          <div class="d-flex align-items-center gap-3">
+            <span class="small text-secondary d-none d-md-inline">
+              <i class="bi bi-wifi me-1"></i>Status:
+              <span class="text-success">
+                {% block status_text %}Online{% endblock %}
+              </span>
+            </span>
+
+            {% block user_menu %}
+            <a href="#" class="btn btn-outline-light btn-sm">
+              <i class="bi bi-box-arrow-in-right me-1"></i>Login
+            </a>
+            {% endblock %}
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+      {% if messages %}
+        <div class="row">
+          <div class="col-lg-8 col-xl-6 mx-auto">
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <main class="container-fluid py-4">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-top border-secondary mt-4 py-3">
+      <div class="container-fluid small text-secondary d-flex justify-content-between">
+        <span>Net Toolkit</span>
+        <span>Network utilities for diagnostics and mapping</span>
+      </div>
+    </footer>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+      integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
+      integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy"
+      crossorigin="anonymous"
+    ></script>
+
+  </body>
+</html>
