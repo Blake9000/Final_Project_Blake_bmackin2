@@ -298,8 +298,6 @@
 
             <hr class="border-secondary my-3" />
             <p class="text-secondary small mb-0">
-              Add more cards here for additional utilities like ARP table inspection, MAC lookup,
-              or log visualization.
             </p>
           </div>
         </div>
@@ -308,13 +306,3 @@
   </div>
 {% endblock %}
 
-{% block extra_scripts %}
-<script>
-  const form = document.getElementById("port-scan-form");
-  if (form) {
-    form.addEventListener("submit", function (e) {
-      // e.preventDefault();
-    });
-  }
-</script>
-{% endblock %}
