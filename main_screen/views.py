@@ -91,7 +91,6 @@ def run_traceroute(target: str, max_hops: int = 30):
     if system == "windows":
         cmd = ["tracert", "-h", str(max_hops), target]
     else:
-        # On many Linux systems this binary is `traceroute`
         cmd = ["traceroute", "-m", str(max_hops), target]
 
     try:
@@ -113,7 +112,6 @@ def calculate_subnet(cidr: str):
     net = ipaddress.ip_network(cidr, strict=False)
     total = net.num_addresses
 
-    # Compute usable host count and first/last usable
     if isinstance(net, ipaddress.IPv4Network) and net.prefixlen <= 30:
         usable_hosts = max(total - 2, 0)
         first_host_int = int(net.network_address) + 1
@@ -121,7 +119,6 @@ def calculate_subnet(cidr: str):
         first_host = str(ipaddress.IPv4Address(first_host_int))
         last_host = str(ipaddress.IPv4Address(last_host_int))
     else:
-        # For /31, /32, and IPv6, treat all as "usable"
         usable_hosts = total
         first_host = str(net.network_address)
         last_host = str(net.broadcast_address)
@@ -171,7 +168,6 @@ def dashboard(request):
                 try:
                     context["results"] = scan_ports(target, ports)
                 except Exception as exc:
-                    # Bubble a simple error into the table area
                     context["results"] = []
                     context["scan_error"] = str(exc)
             else:
