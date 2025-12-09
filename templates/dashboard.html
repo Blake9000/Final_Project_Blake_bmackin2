@@ -40,6 +40,8 @@
           <form id="port-scan-form" class="row g-3"
                 method="post" action="">
             {% csrf_token %}
+            <input type="hidden" name="tool" value="port_scan">
+
             <div class="col-12">
               <label for="targetHost" class="form-label">Target host or IP</label>
               <input
@@ -102,6 +104,12 @@
               </button>
             </div>
           </form>
+
+          {% if scan_error %}
+            <p class="text-danger small mt-3 mb-0">
+              {{ scan_error }}
+            </p>
+          {% endif %}
 
           <hr class="border-secondary my-4" />
 
@@ -169,8 +177,7 @@
           </div>
           <div class="card-body">
             <p class="text-secondary small">
-              Use this area as a canvas for your topology. Integrate a JS diagram library, SVG,
-              or custom canvas and feed it with discovered hosts.
+             Sketch your network topology.
             </p>
             <div class="diagram-canvas rounded d-flex align-items-center justify-content-center bg-dark-subtle">
               <span class="text-secondary small text-center px-3">
@@ -191,6 +198,7 @@
           </div>
           <div class="card-body">
             <div class="row g-3">
+              <!-- Ping -->
               <div class="col-md-6">
                 <div class="card bg-dark border-secondary h-100">
                   <div class="card-body">
@@ -203,6 +211,7 @@
                     </p>
                     <form class="d-flex gap-2" method="post" action="">
                       {% csrf_token %}
+                      <input type="hidden" name="tool" value="ping">
                       <input
                         type="text"
                         class="form-control form-control-sm bg-surface text-light border-secondary"
@@ -213,6 +222,15 @@
                         Go
                       </button>
                     </form>
+
+                    {% if ping_output %}
+                      <pre class="mt-2 small text-light bg-black border border-secondary rounded p-2"
+                           style="max-height: 200px; overflow:auto;">
+{{ ping_output }}
+                      </pre>
+                    {% elif ping_error %}
+                      <p class="text-danger small mt-2 mb-0">{{ ping_error }}</p>
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -229,6 +247,7 @@
                     </p>
                     <form class="d-flex gap-2" method="post" action="">
                       {% csrf_token %}
+                      <input type="hidden" name="tool" value="traceroute">
                       <input
                         type="text"
                         class="form-control form-control-sm bg-surface text-light border-secondary"
@@ -239,6 +258,15 @@
                         Go
                       </button>
                     </form>
+
+                    {% if traceroute_output %}
+                      <pre class="mt-2 small text-light bg-black border border-secondary rounded p-2"
+                           style="max-height: 200px; overflow:auto;">
+{{ traceroute_output }}
+                      </pre>
+                    {% elif traceroute_error %}
+                      <p class="text-danger small mt-2 mb-0">{{ traceroute_error }}</p>
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -255,6 +283,7 @@
                     </p>
                     <form class="d-flex gap-2" method="post" action="">
                       {% csrf_token %}
+                      <input type="hidden" name="tool" value="subnet">
                       <input
                         type="text"
                         class="form-control form-control-sm bg-surface text-light border-secondary"
@@ -265,6 +294,22 @@
                         Go
                       </button>
                     </form>
+
+                    {% if subnet %}
+                      <ul class="small mb-0 mt-2">
+                        <li>Network: {{ subnet.network }}</li>
+                        <li>Broadcast: {{ subnet.broadcast }}</li>
+                        <li>Prefix length: /{{ subnet.prefixlen }}</li>
+                        <li>Total addresses: {{ subnet.total }}</li>
+                        <li>Usable hosts: {{ subnet.usable_hosts }}</li>
+                        {% if subnet.first_host %}
+                          <li>First host: {{ subnet.first_host }}</li>
+                          <li>Last host: {{ subnet.last_host }}</li>
+                        {% endif %}
+                      </ul>
+                    {% elif subnet_error %}
+                      <p class="text-danger small mt-2 mb-0">{{ subnet_error }}</p>
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -281,6 +326,7 @@
                     </p>
                     <form class="d-flex gap-2" method="post" action="">
                       {% csrf_token %}
+                      <input type="hidden" name="tool" value="dns">
                       <input
                         type="text"
                         class="form-control form-control-sm bg-surface text-light border-secondary"
@@ -291,6 +337,24 @@
                         Go
                       </button>
                     </form>
+
+                    {% if dns %}
+                      <ul class="small mb-0 mt-2">
+                        <li>Query: {{ dns.host }}</li>
+                        {% if dns.addresses %}
+                          <li>Addresses:</li>
+                          <ul class="mb-0">
+                            {% for addr in dns.addresses %}
+                              <li>{{ addr }}</li>
+                            {% endfor %}
+                          </ul>
+                        {% else %}
+                          <li>No addresses returned.</li>
+                        {% endif %}
+                      </ul>
+                    {% elif dns_error %}
+                      <p class="text-danger small mt-2 mb-0">{{ dns_error }}</p>
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -305,4 +369,3 @@
     </div>
   </div>
 {% endblock %}
-
