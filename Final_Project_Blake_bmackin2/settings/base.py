@@ -80,7 +80,7 @@ DATABASES = {
         'NAME': BASE_DIR /'data'/ 'db.sqlite3',
     }
 }
-
+LOGIN_URL = 'login'
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR/'staticfiles'
 
