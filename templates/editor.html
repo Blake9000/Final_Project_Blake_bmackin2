@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}{{ diagram.name }} · Diagram{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-1">{{ diagram.name }}</h1>
+    <p class="text-secondary small mb-0">Drag nodes. Click two nodes to link them. Save when done.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'diagram_list' %}">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+    <button class="btn btn-outline-light btn-sm" id="btnAdd">
+      <i class="bi bi-plus-circle me-1"></i>Add node
+    </button>
+      <button class="btn btn-outline-light btn-sm" id="btnLink">
+         <i class="bi bi-link-45deg me-1"></i>Link mode
+        </button>
+
+    <button class="btn btn-primary btn-sm" id="btnSave">
+      <i class="bi bi-save me-1"></i>Save
+    </button>
+  </div>
+</div>
+
+<div class="card bg-surface border-secondary">
+  <div class="card-body">
+    <div id="canvas" class="diagram-canvas rounded position-relative bg-dark-subtle" style="height:520px;"></div>
+    <div class="small text-secondary mt-2" id="status"></div>
+  </div>
+</div>
+
+<script>
+  const CANVAS = document.getElementById("canvas");
+  const STATUS = document.getElementById("status");
+
+  let state = {{ diagram.data|default:"{}"|safe }};
+  if (!state.nodes) state = {nodes: [], edges: []};
+
+  let selectedNodeId = null;
+  let linkMode = false;
+
+  document.getElementById("btnLink").addEventListener("click", () => {
+      linkMode = !linkMode;
+      selectedNodeId = null;
+      setStatus(linkMode ? "Link mode: click two nodes to connect." : "Link mode off.");
+      render();
+    });
+
+  function setStatus(msg){ STATUS.textContent = msg; }
+
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+  function render(){
+    CANVAS.innerHTML = "";
+
+    // draw edges (simple SVG overlay)
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", "100%");
+    svg.style.position = "absolute";
+    svg.style.left = "0";
+    svg.style.top = "0";
+    svg.style.pointerEvents = "none";
+    CANVAS.appendChild(svg);
+
+    const byId = new Map(state.nodes.map(n => [n.id, n]));
+
+    for (const e of state.edges){
+      const a = byId.get(e.from), b = byId.get(e.to);
+      if (!a || !b) continue;
+
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", a.x + 60);
+      line.setAttribute("y1", a.y + 20);
+      line.setAttribute("x2", b.x + 60);
+      line.setAttribute("y2", b.y + 20);
+      line.setAttribute("stroke", "rgba(148,163,184,0.9)");
+      line.setAttribute("stroke-width", "2");
+      svg.appendChild(line);
+    }
+
+    for (const n of state.nodes){
+      const el = document.createElement("div");
+      el.className = "position-absolute border border-secondary rounded bg-dark text-light px-2 py-1 small";
+      el.style.width = "120px";
+      el.style.cursor = "move";
+      el.style.left = `${n.x}px`;
+      el.style.top = `${n.y}px`;
+      el.dataset.id = n.id;
+
+      const badge = selectedNodeId === n.id ? `<span class="badge text-bg-primary ms-2">selected</span>` : "";
+      el.innerHTML = `<i class="bi bi-hdd-network me-1"></i>${n.label}${badge}`;
+
+        el.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          if (!linkMode) return;
+
+          const id = n.id;
+          if (selectedNodeId === null) {
+            selectedNodeId = id;
+            setStatus("Select a second node to create a link.");
+          } else if (selectedNodeId === id) {
+            selectedNodeId = null;
+            setStatus("Selection cleared.");
+          } else {
+            const exists = state.edges.some(e =>
+              (e.from === selectedNodeId && e.to === id) || (e.from === id && e.to === selectedNodeId)
+            );
+            if (!exists) state.edges.push({from: selectedNodeId, to: id});
+            selectedNodeId = null;
+            setStatus("Link created.");
+          }
+          render();
+    });
+
+
+      let dragging = false, offsetX = 0, offsetY = 0;
+
+      el.addEventListener("mousedown", (ev) => {
+        dragging = true;
+        offsetX = ev.offsetX;
+        offsetY = ev.offsetY;
+        ev.preventDefault();
+      });
+
+      el.addEventListener("dblclick", (ev) => {
+      ev.stopPropagation();
+      const next = prompt("Rename node:", n.label || "");
+      if (next !== null) {
+        n.label = next.trim() || n.label;
+        setStatus("Node renamed.");
+        render();
+      }
+    });
+
+      window.addEventListener("mousemove", (ev) => {
+        if (!dragging) return;
+        const rect = CANVAS.getBoundingClientRect();
+        const nx = clamp(ev.clientX - rect.left - offsetX, 0, rect.width - 120);
+        const ny = clamp(ev.clientY - rect.top - offsetY, 0, rect.height - 40);
+
+        n.x = nx; n.y = ny;
+        render();
+      });
+
+      window.addEventListener("mouseup", () => { dragging = false; });
+
+      CANVAS.appendChild(el);
+    }
+  }
+
+  // click canvas to clear selection
+  CANVAS.addEventListener("click", () => {
+    selectedNodeId = null;
+    setStatus("");
+    render();
+  });
+
+  document.getElementById("btnAdd").addEventListener("click", () => {
+    const id = crypto.randomUUID();
+    const rect = CANVAS.getBoundingClientRect();
+    state.nodes.push({
+      id,
+      label: `Node ${state.nodes.length + 1}`,
+      x: Math.max(0, Math.floor(Math.random() * (rect.width - 140))),
+      y: Math.max(0, Math.floor(Math.random() * (rect.height - 60))),
+      type: "generic",
+    });
+    setStatus("Node added.");
+    render();
+  });
+
+  function getCookie(name){
+    const v = document.cookie.split(";").map(s => s.trim());
+    for (const part of v){
+      if (part.startsWith(name + "=")) return decodeURIComponent(part.substring(name.length + 1));
+    }
+    return "";
+  }
+
+  document.getElementById("btnSave").addEventListener("click", async () => {
+    setStatus("Saving...");
+    const res = await fetch("{% url 'diagram_save' diagram.pk %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: JSON.stringify(state),
+    });
+    if (res.ok){
+      const data = await res.json();
+      setStatus("Saved: " + data.updated_at);
+    } else {
+      setStatus("Save failed.");
+    }
+  });
+
+  render();
+</script>
+{% endblock %}

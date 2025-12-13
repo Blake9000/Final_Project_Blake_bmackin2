@@ -1,9 +1,88 @@
-from django.shortcuts import render
+import json
+
+from django.http import HttpResponseBadRequest, JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
+from .models import PortScan, PortScanResult, NetworkDiagram
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib import messages
 import platform
 import socket
 import subprocess
 import time
 import ipaddress
+
+def site_register(request):
+    if request.method == "POST":
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect("dashboard")
+    else:
+        form = UserCreationForm()
+    return render(request, "register.html", {"form": form})
+
+@login_required
+def scan_history(request):
+    scans = (
+        PortScan.objects
+        .filter(user=request.user)
+        .order_by("-created_at")
+        .prefetch_related("results")
+    )
+    return render(request, "history.html", {"scans": scans})
+
+@login_required
+def diagram_list(request):
+    diagrams = NetworkDiagram.objects.filter(user=request.user).order_by("-updated_at")
+    if request.method == "POST":
+        name = request.POST.get("name", "New Diagram").strip() or "New Diagram"
+        d = NetworkDiagram.objects.create(user=request.user, name=name, data={"nodes": [], "edges": []})
+        return redirect("diagram_editor", pk=d.pk)
+    return render(request, "list.html", {"diagrams": diagrams})
+
+@login_required
+def diagram_editor(request, pk: int):
+    diagram = get_object_or_404(NetworkDiagram, pk=pk, user=request.user)
+    return render(request, "editor.html", {"diagram": diagram})
+
+@login_required
+@require_POST
+@csrf_protect
+def diagram_save(request, pk: int):
+    diagram = get_object_or_404(NetworkDiagram, pk=pk, user=request.user)
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return HttpResponseBadRequest("Invalid JSON")
+
+    # Minimal validation
+    nodes = payload.get("nodes", [])
+    edges = payload.get("edges", [])
+    if not isinstance(nodes, list) or not isinstance(edges, list):
+        return HttpResponseBadRequest("nodes/edges must be lists")
+
+    diagram.data = {"nodes": nodes, "edges": edges}
+    diagram.save(update_fields=["data", "updated_at"])
+    return JsonResponse({"ok": True, "updated_at": diagram.updated_at.isoformat()})
+def site_login(request):
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            return redirect("dashboard")
+        messages.error(request, "Invalid username or password.")
+    return render(request, "login.html", {})
+
+def site_logout(request):
+    logout(request)
+    return redirect("dashboard")
 
 def parse_ports(ports_str: str):
     if not ports_str:
@@ -166,12 +245,38 @@ def dashboard(request):
         if tool == "port_scan":
             target = request.POST.get("target", "").strip()
             ports_str = request.POST.get("ports", "").strip()
+            profile = request.POST.get("profile", "quick")
+            notes = request.POST.get("notes", "").strip()
+            save = request.POST.get("save") == "1"
+
             if target:
                 ports = parse_ports(ports_str)
                 try:
-                    context["results"] = scan_ports(target, ports)
+                    scan_results = scan_ports(target, ports)
+                    context["results"] = scan_results
+
+                    # Save only if user is logged in and checkbox checked
+                    if save and request.user.is_authenticated:
+                        scan = PortScan.objects.create(
+                            user=request.user,
+                            target=target,
+                            ports=ports_str,
+                            profile=profile,
+                            notes=notes,
+                        )
+                        PortScanResult.objects.bulk_create([
+                            PortScanResult(
+                                scan=scan,
+                                port=r["port"],
+                                protocol=r["protocol"],
+                                state=r["state"],
+                                service=r["service"],
+                                latency_ms=r["latency"],
+                            )
+                            for r in scan_results
+                        ])
+
                 except Exception as exc:
-                    # Bubble a simple error into the table area
                     context["results"] = []
                     context["scan_error"] = str(exc)
             else:

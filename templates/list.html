@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Diagrams · Net Toolkit{% endblock %}
+
+{% block content %}
+<div class="row g-3 align-items-center mb-3">
+  <div class="col">
+    <h1 class="h4 mb-0">Network Diagrams</h1>
+    <p class="text-secondary small mb-0">Create and edit saved topologies.</p>
+  </div>
+  <div class="col-auto">
+    <form method="post" class="d-flex gap-2">
+      {% csrf_token %}
+      <input name="name" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="New diagram name">
+      <button class="btn btn-primary btn-sm" type="submit">
+        <i class="bi bi-plus-circle me-1"></i>Create
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="list-group">
+  {% for d in diagrams %}
+    <a class="list-group-item list-group-item-action bg-surface text-light border-secondary"
+       href="{% url 'diagram_editor' d.pk %}">
+      <div class="d-flex justify-content-between">
+        <span class="fw-semibold">{{ d.name }}</span>
+        <span class="text-secondary small">{{ d.updated_at }}</span>
+      </div>
+    </a>
+  {% empty %}
+    <div class="text-secondary">No diagrams yet.</div>
+  {% endfor %}
+</div>
+{% endblock %}

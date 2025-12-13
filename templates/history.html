@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Scan History · Net Toolkit{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-1">Scan History</h1>
+    <p class="text-secondary small mb-0">Saved scans for {{ request.user.username }}.</p>
+  </div>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'dashboard' %}">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+</div>
+
+<div class="accordion" id="scanAccordion">
+  {% for s in scans %}
+    <div class="accordion-item bg-surface border-secondary">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed bg-surface text-light border-0"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#scan{{ s.id }}">
+          <div class="w-100 d-flex justify-content-between">
+            <span class="fw-semibold">{{ s.target }}</span>
+            <span class="text-secondary small">{{ s.created_at }}</span>
+          </div>
+        </button>
+      </h2>
+      <div id="scan{{ s.id }}" class="accordion-collapse collapse" data-bs-parent="#scanAccordion">
+        <div class="accordion-body">
+          <div class="text-secondary small mb-2">
+            Ports: <code>{{ s.ports|default:"(default)" }}</code> |
+            Profile: <code>{{ s.profile }}</code>
+            {% if s.notes %}<div class="mt-1">Notes: {{ s.notes }}</div>{% endif %}
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-dark table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Port</th><th>Proto</th><th>State</th><th>Service</th><th class="text-end">Latency</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in s.results.all %}
+                  <tr>
+                    <td>{{ r.port }}</td>
+                    <td>{{ r.protocol }}</td>
+                    <td>
+                      {% if r.state == "open" %}
+                        <span class="badge bg-success text-uppercase">{{ r.state }}</span>
+                      {% else %}
+                        <span class="badge bg-secondary text-uppercase">{{ r.state }}</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ r.service }}</td>
+                    <td class="text-end">{{ r.latency_ms }} ms</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="5" class="text-secondary small">No results stored for this scan.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="text-secondary">No saved scans yet.</div>
+  {% endfor %}
+</div>
+{% endblock %}
