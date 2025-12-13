@@ -1,0 +1,9 @@
+Key Lessons Learned
+Implementing this, the new thing I really went into was creating a diagram with JS. This expanded on the little bit I learned before this and allowed me to create dynamic pages without needing to configure the backend.
+
+Challenges
+The first challenge I ran into was the original idea for my project. Since I wanted to create a network mapper, I ran into a problem of django being created for web apps and hosted remotely. It is not possible to reliably map someone's network from outside their network.
+Instead, I created different tools as well as a manual mapper.
+
+Future improvements
+In the mapper, I want to create different icons for different network devices as well as allowing the modeling of subnets and other related things. As it stands, it is pretty basic.
