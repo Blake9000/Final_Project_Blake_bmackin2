@@ -24,3 +24,7 @@ I called the first app "main_screen" as this is what the user will primarily loo
 
 
 I am using a virtual environment called "django3". This virtual environment will hold django and any other libraries I find I need. If the 2 project libraries diverge, I will create seperate environments for both of them.
+
+After revisiting the idea:
+I can't really create a network mapper as I wanted to, I am scrapping this.
+I will instead include a port scanner and other tools useful in IT.
